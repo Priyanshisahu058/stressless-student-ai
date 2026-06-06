@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Suite — StressLess Student AI</title>
+  <meta name="description" content="In-browser unit test runner for StressLess Student AI validation, business logic, and utility functions.">
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a1e;
+      --bg2:       #0f0f2d;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --primary:   #6C63FF;
+      --teal:      #2DD4BF;
+      --yellow:    #F59E0B;
+      --red:       #EF4444;
+      --text:      rgba(240,240,255,0.95);
+      --muted:     rgba(160,160,180,0.65);
+      --radius:    12px;
+      --radius-sm: 8px;
+      --font:      'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(45,212,191,0.08));
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+    .header-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6C63FF, #2DD4BF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.4rem;
+    }
+    .header-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .header-nav {
+      margin-top: 1.25rem;
+    }
+    .header-nav a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin: 0 0.75rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .header-nav a:hover { opacity: 1; text-decoration: underline; }
+
+    /* ── Main Layout ── */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn--primary { background: var(--primary); color: #fff; }
+    .btn--primary:hover { background: #5a52e8; transform: translateY(-1px); }
+    .btn--outline { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+    .btn--outline:hover { background: rgba(45,212,191,0.1); }
+    .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .filter-label { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    .loading-dots::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+    @keyframes dots {
+      0%,20% { content: '.'; }
+      40%     { content: '..'; }
+      60%,100%{ content: '...'; }
+    }
+
+    /* ── Results Container ── */
+    #results { min-height: 200px; }
+
+    /* ── Summary Banner ── */
+    .tr-summary {
+      background: var(--card);
+      border: 2px solid;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .tr-summary-main {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .tr-status-icon { font-size: 2.5rem; flex-shrink: 0; }
+    .tr-summary-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .tr-summary-sub   { font-size: 0.82rem; color: var(--muted); }
+    .tr-progress-bar  {
+      height: 8px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .tr-progress-fill { height: 100%; border-radius: 999px; transition: width 0.8s ease; }
+    .tr-pct { font-size: 0.85rem; font-weight: 700; text-align: right; }
+
+    /* ── Suite Section ── */
+    .tr-suite {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+    .tr-suite-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem 1.25rem;
+      border-left: 4px solid;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .tr-suite-name   { font-size: 1rem; font-weight: 700; }
+    .tr-suite-counts { font-size: 0.82rem; font-weight: 600; }
+    .tr-tests { padding: 0.5rem 0; }
+
+    /* ── Individual Test ── */
+    .tr-test {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.6rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background 0.15s;
+    }
+    .tr-test:last-child { border-bottom: none; }
+    .tr-test:hover { background: rgba(255,255,255,0.03); }
+    .tr-test--fail { background: rgba(239,68,68,0.05); }
+    .tr-test--fail:hover { background: rgba(239,68,68,0.08); }
+    .tr-test-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.15rem; }
+    .tr-test-body { flex: 1; min-width: 0; }
+    .tr-test-name  { font-size: 0.85rem; color: var(--text); }
+    .tr-test-error {
+      font-size: 0.78rem;
+      color: var(--red);
+      margin-top: 0.3rem;
+      padding: 0.35rem 0.6rem;
+      background: rgba(239,68,68,0.1);
+      border-radius: 4px;
+      border-left: 3px solid var(--red);
+      word-break: break-word;
+    }
+    .tr-test-duration {
+      font-size: 0.72rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    /* ── Coverage Table ── */
+    .coverage-section {
+      margin-top: 2.5rem;
+    }
+    .coverage-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--teal);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.875rem;
+      border-bottom: 2px solid var(--border);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.875rem;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .badge--pass   { background: rgba(45,212,191,0.15); color: var(--teal); }
+    .badge--fail   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .badge--manual { background: rgba(108,99,255,0.15); color: var(--primary); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .footer a { color: var(--primary); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .header-title { font-size: 1.4rem; }
+      .main { padding: 1.25rem 1rem 3rem; }
+      .tr-suite-header { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="header" role="banner">
+    <h1 class="header-title">🧠 StressLess Student AI — Test Suite</h1>
+    <p class="header-sub">In-browser unit tests for validation, business logic, and utility functions</p>
+    <nav class="header-nav" aria-label="Links">
+      <a href="index.html">← Back to App</a>
+      <a href="docs/TESTING.md">Testing Docs</a>
+      <a href="docs/ACCESSIBILITY_TESTS.md">Accessibility Tests</a>
+      <a href="https://github.com/Priyanshisahu058/stressless-student-ai" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- ── Main ── -->
+  <main class="main" id="main-content">
+
+    <!-- Controls -->
+    <div class="controls" role="toolbar" aria-label="Test controls">
+      <button class="btn btn--primary" id="run-btn" onclick="runAllTests()" aria-label="Run all tests">
+        ▶ Run All Tests
+      </button>
+      <button class="btn btn--outline" id="filter-fail-btn" onclick="toggleFailFilter()" aria-label="Show only failed tests" aria-pressed="false">
+        Show Failed Only
+      </button>
+      <span class="filter-label" id="test-count-label" aria-live="polite" aria-atomic="true">
+        Tests not yet run
+      </span>
+    </div>
+
+    <!-- Results -->
+    <section id="results" aria-label="Test results" aria-live="polite">
+      <div class="loading">
+        Click <strong>Run All Tests</strong> to start the test suite
+      </div>
+    </section>
+
+    <!-- Coverage Summary Table -->
+    <section class="coverage-section" aria-labelledby="coverage-title">
+      <h2 class="coverage-title" id="coverage-title">📊 Test Coverage Summary</h2>
+      <table aria-label="Test coverage by module">
+        <thead>
+          <tr>
+            <th scope="col">Module</th>
+            <th scope="col">File</th>
+            <th scope="col">Test Cases</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mood Tracker</td>
+            <td><code>tests/moodTracker.test.js</code></td>
+            <td>16</td>
+            <td>Unit</td>
+            <td><span class="badge badge--pass" id="cov-mood">—</span></td>
+          </tr>
+          <tr>
+            <td>Wellness Score Engine</td>
+            <td><code>tests/wellnessScore.test.js</code></td>
+            <td>27</td>
+            <td>Unit</td>
+            <td><span class="badge badge--pass" id="cov-wellness">—</span></td>
+          </tr>
+          <tr>
+            <td>Study Wellness Planner</td>
+            <td><code>tests/planner.test.js</code></td>
+            <td>23</td>
+            <td>Unit</td>
+            <td><span class="badge badge--pass" id="cov-planner">—</span></td>
+          </tr>
+          <tr>
+            <td>Reflection Journal</td>
+            <td><code>tests/journal.test.js</code></td>
+            <td>21</td>
+            <td>Unit</td>
+            <td><span class="badge badge--pass" id="cov-journal">—</span></td>
+          </tr>
+          <tr>
+            <td>Storage + Utils</td>
+            <td><code>tests/storage.test.js</code></td>
+            <td>44</td>
+            <td>Unit</td>
+            <td><span class="badge badge--pass" id="cov-storage">—</span></td>
+          </tr>
+          <tr>
+            <td>AI Wellness Coach</td>
+            <td>—</td>
+            <td>8 (manual)</td>
+            <td>Manual</td>
+            <td><span class="badge badge--manual">Manual</span></td>
+          </tr>
+          <tr>
+            <td>Stress Trigger Analysis</td>
+            <td>—</td>
+            <td>7 (manual)</td>
+            <td>Manual</td>
+            <td><span class="badge badge--manual">Manual</span></td>
+          </tr>
+          <tr>
+            <td>Emergency Calm Mode</td>
+            <td>—</td>
+            <td>10 (manual)</td>
+            <td>Manual</td>
+            <td><span class="badge badge--manual">Manual</span></td>
+          </tr>
+          <tr>
+            <td>Progress Dashboard</td>
+            <td>—</td>
+            <td>7 (manual)</td>
+            <td>Manual</td>
+            <td><span class="badge badge--manual">Manual</span></td>
+          </tr>
+          <tr>
+            <td>Crisis Detector</td>
+            <td>—</td>
+            <td>8 (manual)</td>
+            <td>Manual</td>
+            <td><span class="badge badge--manual">Manual</span></td>
+          </tr>
+          <tr style="font-weight:700;">
+            <td><strong>TOTAL</strong></td>
+            <td></td>
+            <td><strong>131</strong></td>
+            <td></td>
+            <td><span class="badge badge--pass" id="cov-total">—</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer" role="contentinfo">
+    <p>
+      StressLess Student AI Test Suite ·
+      <a href="https://github.com/Priyanshisahu058/stressless-student-ai">GitHub</a> ·
+      <a href="docs/TESTING.md">Full Test Docs</a> ·
+      Built with ❤️ for Indian exam students
+    </p>
+  </footer>
+
+  <!-- ── Dependencies (no build step) ── -->
+  <!-- Storage and Utils must load before Validation and TestRunner -->
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="tests/testRunner.js"></script>
+
+  <!-- ── Test Suites ── -->
+  <script src="tests/moodTracker.test.js"></script>
+  <script src="tests/wellnessScore.test.js"></script>
+  <script src="tests/planner.test.js"></script>
+  <script src="tests/journal.test.js"></script>
+  <script src="tests/storage.test.js"></script>
+
+  <!-- ── Orchestration ── -->
+  <script>
+    let showFailOnly = false;
+
+    /**
+     * Runs all registered tests and renders results.
+     */
+    function runAllTests() {
+      const runBtn  = document.getElementById('run-btn');
+      const results = document.getElementById('results');
+      const label   = document.getElementById('test-count-label');
+
+      runBtn.disabled = true;
+      runBtn.textContent = '⏳ Running…';
+      results.innerHTML = '<div class="loading"><span class="loading-dots">Running tests</span></div>';
+
+      // Tiny delay so the loading indicator paints before tests run
+      setTimeout(() => {
+        try {
+          TestRunner.render(results);
+          const s = TestRunner.getSummary();
+
+          label.textContent = `${s.passed}/${s.total} passed · ${s.duration}ms`;
+
+          // Update coverage badges
+          updateCoverageBadges(s);
+
+          // Apply filter if active
+          if (showFailOnly) applyFilter(true);
+
+        } catch (e) {
+          results.innerHTML = `<div class="loading" style="color:#EF4444">
+            ❌ Error running tests: ${e.message}
+          </div>`;
+        } finally {
+          runBtn.disabled = false;
+          runBtn.textContent = '▶ Run All Tests';
+        }
+      }, 30);
+    }
+
+    /**
+     * Toggles "show failed only" filter.
+     */
+    function toggleFailFilter() {
+      showFailOnly = !showFailOnly;
+      const btn = document.getElementById('filter-fail-btn');
+      btn.setAttribute('aria-pressed', String(showFailOnly));
+      btn.textContent = showFailOnly ? 'Show All Tests' : 'Show Failed Only';
+      applyFilter(showFailOnly);
+    }
+
+    /**
+     * Shows or hides passed tests based on filter state.
+     * @param {boolean} failOnly - True to show only failed tests.
+     */
+    function applyFilter(failOnly) {
+      document.querySelectorAll('.tr-test--pass').forEach(el => {
+        el.style.display = failOnly ? 'none' : '';
+      });
+    }
+
+    /**
+     * Updates coverage table badges based on suite results.
+     * @param {{ passed: number, failed: number, total: number }} summary
+     */
+    function updateCoverageBadges(summary) {
+      const grouped = TestRunner.getResultsBySuite();
+      const suiteMap = {
+        'Mood Tracker':          'cov-mood',
+        'Wellness Score Engine': 'cov-wellness',
+        'Study Wellness Planner':'cov-planner',
+        'Reflection Journal':    'cov-journal',
+        'Storage':               'cov-storage',
+        'Utils':                 'cov-storage' // shared badge
+      };
+
+      // Reset storage badge if both suites exist
+      const storagePassed = (grouped['Storage']  || []).filter(t => t.status === 'pass').length;
+      const utilsPassed   = (grouped['Utils']    || []).filter(t => t.status === 'pass').length;
+      const storageTotal  = (grouped['Storage']  || []).length + (grouped['Utils'] || []).length;
+      const storageAllPass= storagePassed + utilsPassed === storageTotal;
+
+      Object.entries(suiteMap).forEach(([suite, badgeId]) => {
+        if (suite === 'Utils') return; // handled above
+        const badge = document.getElementById(badgeId);
+        if (!badge) return;
+
+        if (suite === 'Storage') {
+          badge.className = 'badge ' + (storageAllPass ? 'badge--pass' : 'badge--fail');
+          badge.textContent = `${storagePassed + utilsPassed}/${storageTotal} ✓`;
+          return;
+        }
+
+        const tests = grouped[suite] || [];
+        const passed = tests.filter(t => t.status === 'pass').length;
+        const allPass = passed === tests.length && tests.length > 0;
+        badge.className = 'badge ' + (allPass ? 'badge--pass' : 'badge--fail');
+        badge.textContent = `${passed}/${tests.length} ✓`;
+      });
+
+      // Total badge
+      const totalBadge = document.getElementById('cov-total');
+      if (totalBadge) {
+        totalBadge.className = 'badge ' + (summary.failed === 0 ? 'badge--pass' : 'badge--fail');
+        totalBadge.textContent = `${summary.passed}/${summary.total} ✓`;
+      }
+    }
+
+    // Auto-run on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(runAllTests, 100);
+    });
+  </script>
+
+</body>
+</html>

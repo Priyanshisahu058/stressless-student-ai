@@ -384,7 +384,119 @@ python -m http.server 8000
 
 ---
 
+## 🏗️ Testing Architecture
+
+```
+stressless-student-ai/
+├── test.html                     ← Visual test runner (open in browser)
+├── tests/
+│   ├── testRunner.js             ← Lightweight in-browser test framework
+│   ├── moodTracker.test.js       ← 16 unit tests for mood validation
+│   ├── wellnessScore.test.js     ← 27 unit tests for score calculation
+│   ├── planner.test.js           ← 23 unit tests for planner validation
+│   ├── journal.test.js           ← 21 unit tests for journal + streak logic
+│   └── storage.test.js           ← 44 unit tests for Storage + Utils
+└── js/
+    ├── validation.js             ← Pure validation + business logic (no DOM)
+    └── utils.js                  ← Utilities with full JSDoc
+```
+
+### Running Tests
+
+Open **http://localhost:8000/test.html** — tests run automatically on page load.
+
+```bash
+python -m http.server 8000
+# Open http://localhost:8000/test.html
+```
+
+### What Is Tested (131 total)
+
+| Module | Unit Tests | Type |
+|:--|:--|:--|
+| Mood Tracker | 16 | Unit |
+| Wellness Score Engine | 27 | Unit |
+| Study Wellness Planner | 23 | Unit |
+| Reflection Journal | 21 | Unit |
+| Storage + Utils | 44 | Unit |
+| AI Coach, Triggers, Calm, Dashboard, Crisis | ~40 | Manual |
+
+### Separation of Concerns
+
+Business logic is separated from DOM manipulation into pure functions in `js/validation.js`:
+
+```
+js/validation.js  (pure — no DOM, fully testable)
+├── validateMood()            — mood ID + note length
+├── validateJournalEntry()    — answers array
+├── validatePlannerInput()    — all planner fields
+├── validateWellnessInput()   — all wellness sliders
+├── validateChatMessage()     — message before send
+├── validateTriggerSelection()— chip selection
+├── calculateWellnessScore()  — pure score calculation 0–100
+├── getWellnessLevel()        — label from score
+└── calculateStreak()         — consecutive-day streak
+```
+
+---
+
+## ✅ Validation Strategy
+
+All user inputs are validated by **pure functions** before any persistence or API call. Each returns `{ valid: boolean, error: string | null }`.
+
+| Field | Rule | On Fail |
+|:--|:--|:--|
+| Mood ID | One of 6 valid IDs | Toast + focus on mood grid |
+| Mood note | Max 500 chars | Toast warning |
+| Journal answers | ≥1 non-empty, max 1000 chars each | Toast warning |
+| Exam type | One of 8 valid types | Toast + focus on select |
+| Days remaining | 1–365 | Toast warning |
+| Stress level | 1–10 | Toast warning |
+| Study hours | 0–16 | Toast warning |
+| Sleep hours | 4–12 | Toast warning |
+| Chat message | Non-empty, max 2000 chars | Toast warning |
+
+All user input rendered in HTML is passed through `Utils.escapeHtml()` to prevent XSS.
+
+---
+
+## 🛡️ Error Handling Strategy
+
+### Pattern used in every async operation
+
+```js
+async function operation(input) {
+  const v = Validation.validateInput(input);
+  if (!v.valid) { Utils.toast(v.error, 'warning'); return; }
+  button.disabled = true;
+  try {
+    const result = await Gemini.generate(input);
+    render(result);
+  } catch (err) {
+    renderFallback();
+    Utils.toast('Something went wrong.', 'error');
+  } finally {
+    button.disabled = false;  // Always restored
+  }
+}
+```
+
+### Error Categories
+
+| Category | Handling |
+|:--|:--|
+| Empty / invalid input | Caught by Validation before any processing |
+| Missing localStorage | `Storage.get(key, fallback)` returns safe default |
+| Corrupt JSON | `try/catch` in storage.js, returns fallback |
+| Network failure | `catch` shows fallback AI response |
+| Invalid API key | Fallback response + key banner |
+| Rate limit (429) | Caught, fallback response shown |
+| Offline | Service Worker serves from cache; AI uses fallback |
+
+---
+
 ## 👩‍💻 Author
+
 
 **Priyanshi Sahu** — [@Priyanshisahu058](https://github.com/Priyanshisahu058)
 
