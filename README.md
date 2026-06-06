@@ -158,11 +158,219 @@ See [docs/deployment-guide.md](docs/deployment-guide.md) for full instructions.
 
 ## 🧪 Testing
 
-See [docs/TESTING.md](docs/TESTING.md) for:
-- Manual feature test cases (all 9 modules)
-- Accessibility checklist
-- Mobile/responsive testing
-- Edge cases and offline testing
+> Full test suite: **[docs/TESTING.md](docs/TESTING.md)** | Accessibility tests: **[docs/ACCESSIBILITY_TESTS.md](docs/ACCESSIBILITY_TESTS.md)**
+
+### Features Tested
+
+| Module | Test Coverage |
+|:--|:--|
+| 🤖 AI Wellness Coach | Valid prompts, empty input, API failure fallback, chat persistence |
+| 😊 Mood Tracker | All 6 moods, history storage, persistence after refresh |
+| ⚡ Stress Trigger Analysis | Multi-select, custom input, recommendations, error recovery |
+| ✏️ Reflection Journal | Save entries, streak calculation, history retrieval, validation |
+| 💚 Wellness Score Engine | Min/max values, score calculation, personalized recommendations |
+| 📅 Study Wellness Planner | Input validation, all 8 exam types, plan generation + download |
+| 🌊 Emergency Calm Mode | Breathing exercise, affirmations, grounding, modal/focus trap |
+| 📊 Progress Dashboard | Charts render, analytics update, stored data loads correctly |
+| 🚨 Crisis Detection | Pattern matching, focus trap, cooldown, helpline links |
+
+### Testing Procedure
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Priyanshisahu058/stressless-student-ai.git
+cd stressless-student-ai
+
+# 2. Start local server (required for Service Worker + API)
+python -m http.server 8000
+
+# 3. Open in browser
+# http://localhost:8000
+
+# 4. Run Lighthouse audit
+# Chrome DevTools → Lighthouse → Accessibility → Analyze page load
+
+# 5. Run axe scan
+# Install axe DevTools Chrome extension → Scan ALL of my page
+```
+
+### Manual Test Cases
+
+#### Mood Tracker
+- [ ] Log each of the 6 mood options (Happy, Focused, Okay, Stressed, Anxious, Burnout)
+- [ ] Verify `aria-pressed` toggles on selection
+- [ ] Add a note and verify it appears in history
+- [ ] Verify history shows latest 10 entries
+- [ ] Verify persistence after page refresh (check `sls_mood_entries` in localStorage)
+- [ ] Verify header badge updates after logging
+
+#### AI Wellness Coach
+- [ ] Test valid prompts with API key configured
+- [ ] Test each quick prompt button (Exam Stress, Burnout Help, Mock Test Fail)
+- [ ] Test empty input — nothing should send
+- [ ] Test 2001+ character message — toast warning expected
+- [ ] Test API failure fallback (remove key from config.js — fallback response shown)
+- [ ] Test offline mode (DevTools → Network → Offline — fallback response)
+- [ ] Verify Enter sends, Shift+Enter adds newline
+- [ ] Verify chat history persists after refresh
+
+#### Stress Trigger Analysis
+- [ ] Select multiple trigger chips — verify highlight and `aria-pressed`
+- [ ] Deselect a chip — verify it unhighlights
+- [ ] Analyze button disabled with no selection
+- [ ] Test custom trigger input field enables button
+- [ ] Verify AI recommendations generated (with API key)
+- [ ] Verify fallback shown without API key
+- [ ] Test error recovery — button re-enables after failure
+
+#### Reflection Journal
+- [ ] Save entry with all 3 prompts answered
+- [ ] Save entry with only 1 prompt — succeeds
+- [ ] Save with no prompts — warning toast expected
+- [ ] Verify character counter updates (X / 1000)
+- [ ] Verify 1-day streak after first entry
+- [ ] Verify streak increments on consecutive days
+- [ ] Verify streak resets after missing a day
+- [ ] Verify history entries appear as expandable accordions
+- [ ] Verify history persists after refresh
+
+#### Wellness Score Engine
+- [ ] Set all sliders to minimum — "Needs Care" score expected
+- [ ] Set all sliders to optimal + log Happy mood — "Excellent" score expected
+- [ ] Verify breakdown bars render for all 5 categories
+- [ ] Verify personalized tip for low sleep (set to 4h)
+- [ ] Verify personalized tip for high stress (set to 9/10)
+- [ ] Verify `aria-valuenow` updates on slider move
+- [ ] Verify Dashboard updates after logging
+
+#### Study Wellness Planner
+- [ ] Generate without exam selection — toast warning
+- [ ] Generate for JEE — plan card appears
+- [ ] Generate for NEET, CAT, UPSC — all work
+- [ ] Download button creates `.txt` file
+- [ ] Refresh page — previously generated plan reloads
+- [ ] Test offline — fallback plan shown, button re-enables
+
+#### Emergency Calm Mode
+- [ ] Open overlay — focus moves to close button
+- [ ] Breathing timer counts down: 4s → 7s → 8s → repeats
+- [ ] Circle animates — expands on inhale, contracts on exhale
+- [ ] Affirmation changes every 6 seconds
+- [ ] Grounding: "5 things SEE" → Next → "4 things TOUCH" → ... → Well Done
+- [ ] Grounding restart button resets to step 1
+- [ ] Tab key stays within overlay (focus trap)
+- [ ] Escape closes overlay
+- [ ] Focus returns to trigger button on close
+- [ ] Opening twice does NOT stack intervals
+
+#### Dashboard
+- [ ] Navigate with no data — charts empty, stat cards show "–"
+- [ ] Log moods — mood line chart shows real scores (not flat)
+- [ ] Log wellness — bar chart updates with colors
+- [ ] Navigate away and back 3x — NO chart duplication
+- [ ] Streak card shows correct streak count
+- [ ] Weekly AI summary generates (with API key)
+
+### Browser Testing Results
+
+| Feature | Chrome | Edge | Firefox |
+|:--|:--|:--|:--|
+| App loads correctly | ✅ | ✅ | ✅ |
+| Glassmorphism effects | ✅ | ✅ | ✅ |
+| Chart.js renders | ✅ | ✅ | ✅ |
+| Gemini API calls | ✅ | ✅ | ✅ |
+| Service Worker | ✅ | ✅ | ✅ |
+| localStorage | ✅ | ✅ | ✅ |
+| Calm Mode animation | ✅ | ✅ | ✅ |
+| Focus traps | ✅ | ✅ | ✅ |
+| aria-pressed toggles | ✅ | ✅ | ✅ |
+| Range slider styling | ✅ | ✅ | ⚠️ (Firefox uses scrollbar-width) |
+
+### Responsive Testing
+
+| Viewport | Device | Layout | Tested |
+|:--|:--|:--|:--|
+| 375px | iPhone SE / Mobile | Bottom nav, 2-col mood grid, single-col forms | ☐ |
+| 390px | iPhone 14 | Bottom nav, full-height chat | ☐ |
+| 768px | iPad / Tablet | Mobile nav, single-col charts | ☐ |
+| 1024px | iPad Pro | Sidebar appears, 2-col stats | ☐ |
+| 1280px | Laptop | Full sidebar, 4-col stats | ☐ |
+| 1440px | Desktop | Full layout, side-by-side charts | ☐ |
+
+**Key checks at 375px:**
+- [ ] No horizontal scrollbar
+- [ ] All buttons ≥ 44×44px touch targets
+- [ ] Bottom navigation visible above content
+- [ ] Toasts appear above bottom nav (80px offset)
+- [ ] Calm Mode overlay fills full screen
+
+### Accessibility Checklist
+
+> Full 97-item test suite: [docs/ACCESSIBILITY_TESTS.md](docs/ACCESSIBILITY_TESTS.md)
+
+**Keyboard Navigation**
+- [ ] All interactive elements reachable by Tab
+- [ ] Skip link appears on first Tab → Enter skips to main content
+- [ ] Escape closes Calm Mode and Crisis Modal
+- [ ] Focus trapped inside open modals (Tab cycles within)
+- [ ] Focus returns to trigger element on modal close
+
+**Screen Reader**
+- [ ] All buttons have descriptive `aria-label`
+- [ ] Decorative emoji have `aria-hidden="true"`
+- [ ] Chat responses announced via `aria-live="polite"`
+- [ ] Toast messages announced
+- [ ] Modal roles announced (`role="dialog"`, `aria-modal="true"`)
+
+**ARIA Attributes**
+- [ ] `aria-pressed` toggles on mood buttons
+- [ ] `aria-pressed` toggles on trigger chips
+- [ ] `aria-valuenow` updates on range sliders
+- [ ] `aria-current="page"` on active nav button
+- [ ] `aria-hidden` on inactive sections
+
+**Visual**
+- [ ] `:focus-visible` ring visible on all interactive elements
+- [ ] Minimum 4.5:1 contrast on all text
+- [ ] No color as sole indicator of state
+- [ ] `prefers-reduced-motion` disables all animations
+- [ ] `prefers-contrast: high` increases border opacity
+
+**Lighthouse Accessibility Score Target: ≥ 90**
+
+### Security Validation Checklist
+
+**Input Sanitization**
+- [ ] `<script>alert(1)</script>` in chat — escaped, not executed
+- [ ] `<img src=x onerror=alert(1)>` in journal — escaped
+- [ ] `"><script>alert(1)</script>` in mood note — escaped in history
+- [ ] All user input passes through `Utils.escapeHtml()` before DOM insertion
+
+**XSS Prevention**
+- [ ] `Utils.sanitize()` used for all HTML rendering contexts
+- [ ] No `innerHTML` assignment from raw user input
+- [ ] Chat AI responses rendered with `Utils.escapeHtml()` + safe formatter
+
+**Validation Checks**
+- [ ] Chat message capped at 2000 characters
+- [ ] Mood notes capped at 500 characters
+- [ ] Journal entries capped at 1000 characters each
+- [ ] Planner requires exam selection before API call
+- [ ] Trigger analysis requires at least 1 trigger selected
+- [ ] Wellness score values clamped to valid ranges
+
+**Safe API Handling**
+- [ ] All Gemini API calls wrapped in try/catch
+- [ ] Fallback responses returned on any failure
+- [ ] Loading buttons re-enabled in `finally` blocks
+- [ ] API key never logged to console
+- [ ] Gemini safety settings `BLOCK_MEDIUM_AND_ABOVE` configured
+
+**API Key Security**
+- [ ] `config.js` in `.gitignore` — confirm with `git status`
+- [ ] No key in any committed file — confirm with `git log -p | grep AIza`
+- [ ] Key not visible in browser source (only loaded at runtime)
+- [ ] Key never sent to any server except `generativelanguage.googleapis.com`
 
 ---
 
