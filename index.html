@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="StressLess Student AI — Your AI-powered mental wellness companion for NEET, JEE, CUET, CAT, GATE, UPSC and board exam preparation. Track mood, manage stress, and build resilience." />
+  <meta name="keywords" content="mental wellness, student stress, NEET, JEE, CUET, CAT, GATE, UPSC, exam anxiety, mood tracker, AI wellness coach" />
+  <meta name="theme-color" content="#0a0a1a" />
+  <meta property="og:title" content="StressLess Student AI" />
+  <meta property="og:description" content="AI-powered mental wellness for exam students" />
+  <meta property="og:type" content="website" />
+  <title>StressLess Student AI — Wellness Companion for Exam Students</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Config (gitignored — contains API key) -->
+  <script src="config.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Skip Link -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+</head>
+
+<body>
+  <!-- ── API Key Banner ── -->
+  <div id="api-key-banner" class="api-key-banner" role="alert" aria-live="polite" hidden>
+    <span class="apb-icon" aria-hidden="true">🔑</span>
+    <div class="apb-content">
+      <strong>Set up your Gemini API key</strong> to unlock AI features.
+      Open <code>config.js</code> and replace <code>YOUR_GEMINI_API_KEY_HERE</code> with your key from
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.
+      All other features work without a key.
+    </div>
+    <button class="apb-close" onclick="this.parentElement.setAttribute('hidden','')" aria-label="Dismiss API key notice">✕</button>
+  </div>
+
+  <!-- ── App Shell ── -->
+  <div class="app-shell">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="sidebar-brand">
+        <span class="brand-icon" aria-hidden="true">🧠</span>
+        <div class="brand-text">
+          <span class="brand-name">StressLess</span>
+          <span class="brand-sub">Student AI</span>
+        </div>
+      </div>
+
+      <!-- User mini-profile -->
+      <div class="sidebar-profile">
+        <span class="profile-avatar" aria-hidden="true">👤</span>
+        <div class="profile-info">
+          <span id="user-greeting" class="profile-greeting">Hello, Student!</span>
+          <span id="today-mood-display" class="profile-mood" aria-live="polite">No mood logged today</span>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav aria-label="App sections">
+        <ul id="sidebar-nav" class="sidebar-nav" role="list"></ul>
+      </nav>
+
+      <!-- Emergency Calm Button -->
+      <div class="sidebar-footer">
+        <button 
+          id="calm-mode-btn" 
+          class="btn btn--calm btn--full"
+          aria-label="Open Emergency Calm Mode for immediate stress relief"
+        >
+          <span aria-hidden="true">🌊</span> Calm Mode
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ── -->
+    <main id="main-content" class="main-content" aria-label="Main content area">
+
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <h1 class="header-title" id="page-title">AI Wellness Coach</h1>
+          <div class="header-mood-badge" aria-label="Your current mood">
+            <span aria-hidden="true">💭</span>
+            <span id="header-mood">– Log Mood</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <button 
+            class="btn btn--icon" 
+            onclick="App.navigateTo('dashboard')"
+            aria-label="View your progress dashboard"
+            title="Dashboard"
+          >📊</button>
+          <button 
+            id="calm-mode-btn-header"
+            class="btn btn--calm btn--small" 
+            onclick="CalmMode.open('header')"
+            aria-label="Emergency Calm Mode"
+          >🌊 Calm</button>
+        </div>
+      </header>
+
+      <!-- ════════════════════════════════════
+           SECTION: AI WELLNESS COACH
+      ════════════════════════════════════ -->
+      <section id="section-coach" class="app-section" aria-labelledby="coach-heading">
+        <div class="section-header">
+          <h2 id="coach-heading" class="section-title">🤖 AI Wellness Coach</h2>
+          <p class="section-subtitle">Your compassionate AI companion for exam stress and emotional support</p>
+        </div>
+
+        <!-- Quick Prompts -->
+        <div class="quick-prompts" aria-label="Quick conversation starters">
+          <button class="quick-prompt-btn" data-prompt="I'm feeling very stressed about my upcoming exam. Can you help me?" aria-label="Quick prompt: exam stress">😰 Exam Stress</button>
+          <button class="quick-prompt-btn" data-prompt="I'm feeling burned out and can't focus on studying. What should I do?" aria-label="Quick prompt: burnout">🔥 Burnout Help</button>
+          <button class="quick-prompt-btn" data-prompt="I failed my mock test and feel terrible. How do I get back on track?" aria-label="Quick prompt: failed mock test">📉 Mock Test Fail</button>
+          <button class="quick-prompt-btn" data-prompt="My parents have very high expectations from me and I'm crumbling under pressure." aria-label="Quick prompt: family pressure">👨‍👩‍👧 Family Pressure</button>
+          <button class="quick-prompt-btn" data-prompt="I'm scared about the results. What if I don't get the rank I need?" aria-label="Quick prompt: result anxiety">📋 Result Anxiety</button>
+        </div>
+
+        <!-- Chat Window -->
+        <div class="chat-container" role="region" aria-label="Chat with StressLess AI">
+          <div id="chat-messages" class="chat-messages" aria-live="polite" aria-label="Chat conversation">
+            <!-- Welcome message -->
+            <div class="chat-bubble chat-bubble--assistant chat-bubble--visible" role="article" aria-label="Welcome message from StressLess AI">
+              <div class="chat-avatar" aria-hidden="true">🤖</div>
+              <div class="chat-body">
+                <div class="chat-text" id="coach-welcome">
+                  Good day! I'm StressLess AI, your personal wellness companion for exam preparation. 💙
+                  <br><br>
+                  I'm here to help you manage stress, overcome exam anxiety, and build emotional resilience. Feel free to share what's on your mind — whether it's exam pressure, results anxiety, burnout, or just needing some motivation.
+                  <br><br>
+                  <strong>How are you feeling today?</strong>
+                </div>
+                <span class="chat-time" aria-hidden="true">Now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="chat-input-area">
+            <label for="coach-input" class="sr-only">Message StressLess AI</label>
+            <textarea
+              id="coach-input"
+              class="chat-input"
+              placeholder="Share how you're feeling... (Press Enter to send, Shift+Enter for new line)"
+              rows="1"
+              maxlength="2000"
+              aria-label="Type your message to StressLess AI"
+              aria-describedby="chat-input-hint"
+            ></textarea>
+            <div id="chat-input-hint" class="sr-only">Press Enter to send your message, or Shift+Enter for a new line</div>
+            <button id="coach-send-btn" class="btn btn--primary btn--send" aria-label="Send message">
+              <span aria-hidden="true">➤</span>
+            </button>
+          </div>
+          <div class="chat-footer">
+            <button id="clear-chat-btn" class="btn btn--ghost btn--tiny" aria-label="Clear all chat history">🗑️ Clear History</button>
+            <span class="chat-disclaimer">AI responses are for support, not medical advice. For mental health emergencies, call iCall: 9152987821</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: MOOD TRACKER
+      ════════════════════════════════════ -->
+      <section id="section-mood" class="app-section hidden" aria-labelledby="mood-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="mood-heading" class="section-title">😊 Daily Mood Tracker</h2>
+          <p class="section-subtitle">Log your emotional state to understand your patterns over time</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">How are you feeling right now?</h3>
+          <div id="mood-grid" class="mood-grid" role="group" aria-label="Select your current mood"></div>
+
+          <!-- Optional note -->
+          <div id="mood-note-section" class="mood-note-section hidden" aria-live="polite">
+            <label for="mood-note" class="form-label">Add a note (optional)</label>
+            <textarea
+              id="mood-note"
+              class="form-textarea"
+              placeholder="What's contributing to this mood?..."
+              rows="2"
+              maxlength="500"
+              aria-label="Optional note about your mood"
+            ></textarea>
+          </div>
+
+          <button id="log-mood-btn" class="btn btn--primary mt-2" disabled aria-label="Save your mood entry">
+            💾 Log Mood
+          </button>
+        </div>
+
+        <!-- Mood History -->
+        <div class="card mt-3">
+          <h3 class="card-title">Recent Mood History</h3>
+          <div id="mood-history" class="mood-history" aria-label="Your recent mood entries" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: STRESS TRIGGERS
+      ════════════════════════════════════ -->
+      <section id="section-triggers" class="app-section hidden" aria-labelledby="triggers-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="triggers-heading" class="section-title">⚡ Stress Trigger Analysis</h2>
+          <p class="section-subtitle">Identify what's stressing you out and get personalized AI coping strategies</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Select your current stress triggers</h3>
+          <p class="card-subtitle">Choose all that apply — you can select multiple</p>
+          <div id="trigger-chips" class="trigger-chips" role="group" aria-label="Stress trigger options"></div>
+
+          <div class="form-row mt-2">
+            <div class="form-group">
+              <label for="custom-trigger" class="form-label">Custom trigger (optional)</label>
+              <input
+                type="text"
+                id="custom-trigger"
+                class="form-input"
+                placeholder="Describe another trigger..."
+                maxlength="100"
+                aria-label="Enter a custom stress trigger"
+              />
+            </div>
+            <div class="form-group">
+              <label for="trigger-exam-type" class="form-label">Your exam</label>
+              <select id="trigger-exam-type" class="form-select" aria-label="Select your examination type">
+                <option value="">Select exam...</option>
+                <option>JEE Main/Advanced</option>
+                <option>NEET UG</option>
+                <option>CUET</option>
+                <option>CAT</option>
+                <option>GATE</option>
+                <option>UPSC CSE</option>
+                <option>Class 12 Boards</option>
+                <option>Class 10 Boards</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="analyze-triggers-btn" class="btn btn--primary mt-2" disabled aria-label="Analyze selected stress triggers with AI">
+            🔍 Analyze My Triggers
+          </button>
+        </div>
+
+        <!-- Analysis Result -->
+        <div id="trigger-analysis-result" class="hidden mt-3" aria-live="polite" aria-label="AI trigger analysis result"></div>
+
+        <!-- History -->
+        <div class="card mt-3">
+          <h3 class="card-title">Recent Sessions</h3>
+          <div id="trigger-history" aria-label="Past trigger analysis sessions"></div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: REFLECTION JOURNAL
+      ════════════════════════════════════ -->
+      <section id="section-journal" class="app-section hidden" aria-labelledby="journal-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="journal-heading" class="section-title">✏️ Reflection Journal</h2>
+          <p class="section-subtitle">Daily reflections to process emotions and build self-awareness</p>
+          <div class="streak-badge" aria-label="Your journal streak">
+            🔥 <span id="journal-streak">0</span>-day streak
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Today's Reflection — <span id="journal-today-date"></span></h3>
+          <script>document.getElementById('journal-today-date').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long'});</script>
+          <div id="journal-prompts" class="journal-prompts"></div>
+          <button id="save-journal-btn" class="btn btn--primary mt-3" aria-label="Save today's journal entry">
+            💾 Save Journal Entry
+          </button>
+        </div>
+
+        <!-- Past Entries -->
+        <div class="card mt-3">
+          <h3 class="card-title">Past Entries</h3>
+          <div id="journal-history" class="journal-history" aria-label="Your past journal entries" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: WELLNESS SCORE
+      ════════════════════════════════════ -->
+      <section id="section-wellness" class="app-section hidden" aria-labelledby="wellness-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="wellness-heading" class="section-title">💚 Wellness Score Engine</h2>
+          <p class="section-subtitle">Calculate your daily wellness score and get personalized improvement tips</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Log Today's Wellness</h3>
+          <form id="wellness-form" onsubmit="return false;" novalidate>
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label for="wellness-mood" class="form-label">
+                  Mood Level: <strong id="wellness-mood-display" aria-live="polite">3</strong>/5
+                </label>
+                <input type="range" id="wellness-mood" class="form-range" min="1" max="5" value="3"
+                  aria-label="Mood level from 1 to 5" aria-valuemin="1" aria-valuemax="5" aria-valuenow="3" />
+                <div class="range-labels" aria-hidden="true"><span>😢</span><span>😐</span><span>😊</span></div>
+              </div>
+
+              <div class="form-group">
+                <label for="wellness-sleep" class="form-label">Sleep Hours Last Night</label>
+                <input type="number" id="wellness-sleep" class="form-input" value="7" min="0" max="24" step="0.5"
+                  aria-label="Hours of sleep last night" />
+              </div>
+
+              <div class="form-group">
+                <label for="wellness-water" class="form-label">Water Intake (glasses)</label>
+                <input type="number" id="wellness-water" class="form-input" value="6" min="0" max="20"
+                  aria-label="Glasses of water consumed today" />
+              </div>
+
+              <div class="form-group">
+                <label for="wellness-study" class="form-label">Study Hours Today</label>
+                <input type="number" id="wellness-study" class="form-input" value="5" min="0" max="18" step="0.5"
+                  aria-label="Hours studied today" />
+              </div>
+
+              <div class="form-group form-group--full">
+                <label for="wellness-stress" class="form-label">
+                  Stress Level: <strong id="wellness-stress-display" aria-live="polite">5</strong>/10
+                </label>
+                <input type="range" id="wellness-stress" class="form-range" min="1" max="10" value="5"
+                  aria-label="Stress level from 1 (calm) to 10 (very stressed)" aria-valuemin="1" aria-valuemax="10" aria-valuenow="5" />
+                <div class="range-labels" aria-hidden="true"><span>😌 Calm</span><span>😰 Very Stressed</span></div>
+              </div>
+
+            </div>
+            <button id="log-wellness-btn" class="btn btn--primary mt-2" aria-label="Calculate and save your wellness score">
+              📊 Calculate & Log Score
+            </button>
+          </form>
+        </div>
+
+        <!-- Result -->
+        <div id="wellness-result" class="hidden mt-3" aria-live="polite"></div>
+
+        <!-- History -->
+        <div class="card mt-3">
+          <h3 class="card-title">Recent Wellness Log</h3>
+          <div id="wellness-history" aria-label="Your wellness score history" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: STUDY WELLNESS PLANNER
+      ════════════════════════════════════ -->
+      <section id="section-planner" class="app-section hidden" aria-labelledby="planner-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="planner-heading" class="section-title">📅 Study Wellness Planner</h2>
+          <p class="section-subtitle">Get an AI-generated personalized study and wellness schedule</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Tell me about your situation</h3>
+          <form id="planner-form" onsubmit="return false;" novalidate>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="planner-exam-type" class="form-label">Exam Type *</label>
+                <select id="planner-exam-type" class="form-select" required aria-required="true" aria-label="Select your examination type">
+                  <option value="">Select your exam...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="planner-days" class="form-label">Days Until Exam</label>
+                <input type="number" id="planner-days" class="form-input" value="30" min="1" max="730"
+                  aria-label="Number of days until your exam" />
+              </div>
+
+              <div class="form-group">
+                <label for="planner-study-hours" class="form-label">Available Study Hours/Day</label>
+                <input type="number" id="planner-study-hours" class="form-input" value="6" min="1" max="18" step="0.5"
+                  aria-label="Available study hours per day" />
+              </div>
+
+              <div class="form-group">
+                <label for="planner-sleep-hours" class="form-label">Current Sleep Hours</label>
+                <input type="number" id="planner-sleep-hours" class="form-input" value="7" min="3" max="12" step="0.5"
+                  aria-label="Your average sleep hours per night" />
+              </div>
+
+              <div class="form-group form-group--full">
+                <label for="planner-stress" class="form-label">
+                  Current Stress Level: <strong id="planner-stress-display" aria-live="polite">5</strong>/10
+                </label>
+                <input type="range" id="planner-stress" class="form-range" min="1" max="10" value="5"
+                  aria-label="Current stress level" aria-valuemin="1" aria-valuemax="10" aria-valuenow="5"
+                  oninput="document.getElementById('planner-stress-display').textContent=this.value" />
+                <div class="range-labels" aria-hidden="true"><span>😌 Low</span><span>😰 High</span></div>
+              </div>
+            </div>
+
+            <button id="generate-plan-btn" class="btn btn--primary mt-2" aria-label="Generate personalized AI wellness and study plan">
+              🧠 Generate My Wellness Plan
+            </button>
+          </form>
+        </div>
+
+        <!-- Plan Result -->
+        <div id="planner-result" class="hidden mt-3" aria-live="polite" aria-label="Your generated wellness plan"></div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           SECTION: PROGRESS DASHBOARD
+      ════════════════════════════════════ -->
+      <section id="section-dashboard" class="app-section hidden" aria-labelledby="dashboard-heading" aria-hidden="true">
+        <div class="section-header">
+          <h2 id="dashboard-heading" class="section-title">📊 Progress Dashboard</h2>
+          <p class="section-subtitle">Your wellness journey at a glance</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid" role="list" aria-label="Your wellness statistics">
+          <div class="stat-card" role="listitem" aria-label="Journal streak">
+            <div class="stat-icon" aria-hidden="true">🔥</div>
+            <div class="stat-value" id="dashboard-streak" aria-live="polite">–</div>
+            <div class="stat-label">Journal Streak</div>
+          </div>
+          <div class="stat-card" role="listitem" aria-label="Total mood logs">
+            <div class="stat-icon" aria-hidden="true">😊</div>
+            <div class="stat-value" id="dashboard-mood-count" aria-live="polite">–</div>
+            <div class="stat-label">Mood Logs</div>
+          </div>
+          <div class="stat-card" role="listitem" aria-label="Average wellness score this week">
+            <div class="stat-icon" aria-hidden="true">💚</div>
+            <div class="stat-value" id="dashboard-avg-score" aria-live="polite">–</div>
+            <div class="stat-label">Avg Wellness</div>
+          </div>
+          <div class="stat-card" role="listitem" aria-label="Days tracked this week">
+            <div class="stat-icon" aria-hidden="true">📅</div>
+            <div class="stat-value" id="dashboard-days-tracked" aria-live="polite">–</div>
+            <div class="stat-label">Days Tracked</div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="card chart-card">
+            <h3 class="card-title">Mood Trend (7 Days)</h3>
+            <div class="chart-wrapper" role="img" aria-label="Line chart showing your mood scores over the past 7 days">
+              <canvas id="mood-chart" aria-label="Mood trend chart"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h3 class="card-title">Wellness Score (7 Days)</h3>
+            <div class="chart-wrapper" role="img" aria-label="Bar chart showing your wellness scores over the past 7 days">
+              <canvas id="wellness-chart" aria-label="Wellness score trend chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly AI Summary -->
+        <div class="card mt-3">
+          <h3 class="card-title">🤖 Weekly AI Insights</h3>
+          <div id="weekly-summary" aria-live="polite" aria-label="AI-generated weekly wellness summary"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ── Mobile Bottom Nav ── -->
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation"></nav>
+
+  <!-- ════════════════════════════════════
+       CALM MODE OVERLAY
+  ════════════════════════════════════ -->
+  <div id="calm-overlay" class="calm-overlay" hidden role="dialog" aria-labelledby="calm-title" aria-modal="true">
+    <div class="calm-content">
+      <button id="calm-close-btn" class="calm-close" aria-label="Close Calm Mode">✕</button>
+
+      <div class="calm-header">
+        <h2 id="calm-title" class="calm-title">🌊 Emergency Calm Mode</h2>
+        <p class="calm-subtitle">You're safe. Let's breathe together.</p>
+      </div>
+
+      <div class="calm-grid">
+        <!-- Breathing Exercise -->
+        <div class="calm-card" role="region" aria-label="Breathing exercise">
+          <h3 class="calm-card-title">4-7-8 Breathing</h3>
+          <div class="breathing-container" aria-live="polite">
+            <div id="breath-circle" class="breath-circle" aria-hidden="true"></div>
+            <div class="breath-labels">
+              <div id="breath-phase-label" class="breath-phase">Inhale</div>
+              <div id="breath-timer" class="breath-timer" aria-label="Seconds remaining">4</div>
+              <div id="breath-instruction" class="breath-instruction">Breathe in slowly...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Affirmations -->
+        <div class="calm-card" role="region" aria-label="Positive affirmations">
+          <h3 class="calm-card-title">✨ Affirmations</h3>
+          <div class="affirmation-container">
+            <p id="affirmation-text" class="affirmation-text affirmation--visible" aria-live="polite">
+              I am capable of handling whatever comes my way. 💙
+            </p>
+          </div>
+        </div>
+
+        <!-- Grounding -->
+        <div class="calm-card calm-card--full" role="region" aria-label="Grounding exercise">
+          <h3 class="calm-card-title">🌿 5-4-3-2-1 Grounding</h3>
+          <div id="grounding-content" class="grounding-content" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="calm-footer">
+        <p class="calm-crisis-note">
+          If you're in crisis: <strong>iCall: 9152987821</strong> | <strong>Vandrevala: 1860-2662-345</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       CRISIS MODAL
+  ════════════════════════════════════ -->
+  <div id="crisis-modal" class="crisis-modal" hidden role="dialog" aria-labelledby="crisis-modal-title" aria-modal="true">
+    <div class="crisis-modal-content">
+      <h2 id="crisis-modal-title" class="crisis-modal-title">💙 You're Not Alone</h2>
+      <div id="crisis-modal-body" class="crisis-modal-body"></div>
+      <div class="crisis-modal-actions">
+        <button id="crisis-calm-btn" class="btn btn--primary" aria-label="Open Calm Mode for guided exercises">
+          🌊 Open Calm Mode
+        </button>
+        <button id="crisis-close-btn" class="btn btn--ghost" aria-label="Close this dialog">
+          I'm okay for now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast Container (injected by utils.js) ── -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ── Scripts (order matters) ── -->
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/crisisDetector.js"></script>
+  <script src="js/moodTracker.js"></script>
+  <script src="js/stressTriggers.js"></script>
+  <script src="js/journal.js"></script>
+  <script src="js/wellnessScore.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/calmMode.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

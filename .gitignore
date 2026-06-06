@@ -1,0 +1,30 @@
+# API Keys and Secrets - NEVER commit these
+config.js
+config.local.js
+*.env
+.env
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Node (if any tooling added)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/
