@@ -216,8 +216,8 @@ const App = (() => {
     text.className = 'chat-text';
 
     if (role === 'assistant') {
-      // Format AI response with safe HTML
-      text.innerHTML = StressTriggers.formatAIResponse(content);
+      // Format AI response with safe HTML (inline — no external dependency)
+      text.innerHTML = _formatResponse(content);
     } else {
       text.textContent = content;
     }
@@ -403,7 +403,7 @@ const App = (() => {
     document.getElementById('save-journal-btn')?.addEventListener('click', () => Journal.saveEntry());
 
     // Wellness log
-    document.getElementById('log-wellness-btn')?.addEventListener('click', () => WellnessScore.logWellness());
+    document.getElementById('log-wellness-btn')?.addEventListener('click', () => WellnessScore.calculate());
 
     // Planner generate
     document.getElementById('generate-plan-btn')?.addEventListener('click', () => Planner.generatePlan());
@@ -420,7 +420,24 @@ const App = (() => {
     window.addEventListener('focus', updateHeaderMood);
   }
 
-  return { init, navigateTo, sendCoachMessage };
+  // ── Response formatter (shared, safe) ──
+  function _formatResponse(text) {
+    if (!text) return '';
+    return text
+      .split('\n')
+      .map(line => {
+        const safe = Utils.escapeHtml(line);
+        if (!line.trim()) return '<br>';
+        if (/^[-•*] /.test(line))         return `<li>${Utils.escapeHtml(line.slice(2))}</li>`;
+        if (/^#{1,3} /.test(line))        return `<h4>${Utils.escapeHtml(line.replace(/^#+\s/, ''))}</h4>`;
+        if (/\*\*(.+?)\*\*/.test(line))   return `<p>${safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`;
+        return `<p>${safe}</p>`;
+      })
+      .join('')
+      .replace(/(<li>.*?<\/li>)+/g, m => `<ul>${m}</ul>`);
+  }
+
+  return { init, navigateTo, sendCoachMessage, updateHeaderMood };
 })();
 
 // ── Bootstrap ──
