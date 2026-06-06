@@ -1,59 +1,20 @@
-/**
- * StressLess Student AI - Storage Module
- * Centralized LocalStorage abstraction with namespacing and error handling.
- */
-
+// Lightweight Storage abstraction with safe JSON handling
 const Storage = (() => {
-  const NS = 'stressless_';
-
-  function key(name) {
-    return NS + name;
+  const prefix = 'sls_';
+  function safeParse(v, fallback) {
+    try { return JSON.parse(v); } catch (e) { return fallback; }
   }
-
-  function get(name, defaultValue = null) {
+  function get(key, fallback=null) {
     try {
-      const raw = localStorage.getItem(key(name));
-      return raw !== null ? JSON.parse(raw) : defaultValue;
-    } catch (e) {
-      console.warn('Storage.get error:', e);
-      return defaultValue;
-    }
+      const raw = localStorage.getItem(prefix+key);
+      if (raw === null) return fallback;
+      return safeParse(raw, fallback);
+    } catch (e) { return fallback; }
   }
-
-  function set(name, value) {
-    try {
-      localStorage.setItem(key(name), JSON.stringify(value));
-      return true;
-    } catch (e) {
-      console.error('Storage.set error (quota exceeded?):', e);
-      return false;
-    }
+  function set(key, value) {
+    try { localStorage.setItem(prefix+key, JSON.stringify(value)); return true; } catch (e) { return false; }
   }
-
-  function remove(name) {
-    try {
-      localStorage.removeItem(key(name));
-    } catch (e) {
-      console.warn('Storage.remove error:', e);
-    }
-  }
-
-  function append(name, item) {
-    const arr = get(name, []);
-    arr.push(item);
-    return set(name, arr);
-  }
-
-  function getAll(name) {
-    return get(name, []);
-  }
-
-  /** Get items from the last N days */
-  function getRecent(name, days = 7) {
-    const all = get(name, []);
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    return all.filter(item => item.timestamp && item.timestamp >= cutoff);
-  }
-
-  return { get, set, remove, append, getAll, getRecent };
+  function remove(key) { try { localStorage.removeItem(prefix+key); } catch (e) {} }
+  function clear() { try { Object.keys(localStorage).forEach(k => { if (k.startsWith(prefix)) localStorage.removeItem(k); }); } catch (e) {} }
+  return { get, set, remove, clear };
 })();
